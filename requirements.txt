@@ -1,0 +1,3 @@
+# 直接装最新版可能会装到 5.x 预览版（HoughCircles 行为有变化），所以锁在 4.x 稳定版
+opencv-python==4.11.0.86
+numpy>=1.26
