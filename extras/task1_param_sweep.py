@@ -29,7 +29,7 @@ PLATE_R_MAX_RATIO = 0.50
 
 def main():
     parser = argparse.ArgumentParser(description="盘子检测的 param1 扫描")
-    parser.add_argument("--image", default="images/plate.png")
+    parser.add_argument("--image", default="images/plate_real.png")
     args = parser.parse_args()
 
     img = imread_unicode(args.image)

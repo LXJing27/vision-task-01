@@ -45,9 +45,8 @@ python task1_hough_circle.py --no-show   # 不弹窗，只输出结果图
 | 蓝色 `S` 下限 | 120 | Indoor 那半边偏暗，蓝块 S 只有 150，卡到 200 以上会漏 |
 | 黄色 `S` 下限 | 120 | 黄块的 S 都 240 以上，给低点没有副作用 |
 
-**注意**：`images/plate.png`、`images/chart.png` 是合成图，参数和上面这套不通用——
-合成图的饼干是深褐色（对比强，`param1` 要 120），真实图是金黄色（对比弱，只能给 50）。
-这正好说明参数得跟着图调，不能一套打天下。
+真实照片的对比度比想象中弱得多：饼干（灰度 213）和盘子（202）只差 11，
+所以 `param1` 必须压到 50 才描得出边缘。换别的照片时这两个参数要重新扫。
 
 ## 目录
 
@@ -58,8 +57,7 @@ vision-task-01/
 ├── probe_hsv.py              小工具：量某块区域的 HSV 分布，定阈值用
 ├── pick_rect.py              小工具：鼠标拖框，打印 x y w h
 ├── utils.py                  读图/显示/拼图的小函数
-├── make_demo_images.py       生成合成测试图（已有真图后可不用）
-├── images/                   真实图（plate_real / chart_real）+ 合成图
+├── images/                   作业原图（plate_real / chart_real）
 ├── results/                  程序输出
 ├── extras/                   参数扫描、三种替代方法（写文档时用）
 ├── docs/学习过程.md           提交用的文档

@@ -4,11 +4,11 @@
 两种用法：
 
 1) 你已经知道目标大概在哪个矩形里 —— 直接量那一块：
-       python probe_hsv.py --image images/chart.png --rect 311 47 119 119
+       python probe_hsv.py --image images/chart_real.png --rect 311 47 119 119
    输出这块区域 H/S/V 的 5%~95% 分位数，并给出一组建议阈值。
 
 2) 还不知道目标在哪 —— 先看整张图里哪些色相最多：
-       python probe_hsv.py --image images/chart.png
+       python probe_hsv.py --image images/chart_real.png
    输出 H 通道的直方图峰值，也就是「这张图的主色调是哪几个」。
 
 为什么要用分位数而不是平均值：
@@ -66,7 +66,7 @@ def hue_peaks(hsv, top_n=4):
 
 def main():
     parser = argparse.ArgumentParser(description="HSV 定值助手")
-    parser.add_argument("--image", default="images/chart.png")
+    parser.add_argument("--image", default="images/chart_real.png")
     parser.add_argument("--rect", nargs=4, type=int, metavar=("X", "Y", "W", "H"),
                         help="目标所在的矩形，例如 --rect 311 47 119 119")
     args = parser.parse_args()

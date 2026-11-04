@@ -3,7 +3,7 @@
 
 用法：
     python pick_rect.py
-    python pick_rect.py --image images/chart.png
+    python pick_rect.py --image images/chart_real.png
 
 操作：
     弹出窗口后按住鼠标左键拖一个矩形，松开
@@ -20,7 +20,7 @@ from utils import imread_unicode
 
 def main():
     parser = argparse.ArgumentParser(description="拖框取坐标")
-    parser.add_argument("--image", default="images/chart.png")
+    parser.add_argument("--image", default="images/chart_real.png")
     args = parser.parse_args()
 
     img = imread_unicode(args.image)

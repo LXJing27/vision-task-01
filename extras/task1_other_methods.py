@@ -84,7 +84,7 @@ def method_c_alt(img):
 
 def main():
     parser = argparse.ArgumentParser(description="任务一(2)：其他识别圆的方法")
-    parser.add_argument("--image", default="images/plate.png")
+    parser.add_argument("--image", default="images/plate_real.png")
     parser.add_argument("--no-show", action="store_true")
     args = parser.parse_args()
 
