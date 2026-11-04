@@ -1,11 +1,6 @@
 # -*- coding: utf-8 -*-
 """参数扫描：把盘子的 Canny 阈值 param1 从低到高扫一遍，看抓到的圆怎么变。
 
-====================================================================
-【这是骨架文件】只有 TODO 1 一处，即循环里那次 HoughCircles 调用。
-九宫格的拼图部分已经写好了。
-====================================================================
-
 为什么值得写这个：调参不要靠猜。固定其它参数，只动一个，
 把每一档的结果并排画出来，分界点一眼就能看到。
 这张图放进文档里，比写十句「我反复调试」有说服力。
@@ -27,9 +22,9 @@ import numpy as np
 from utils import imread_unicode, imwrite_unicode, with_title
 
 PARAM1_LIST = [20, 30, 40, 50, 60, 70, 85, 100, 130]
-PLATE_PARAM2 = 60
-PLATE_R_MIN_RATIO = 0.30
-PLATE_R_MAX_RATIO = 0.50
+PLATE_PARAM2 = 30
+PLATE_R_MIN_RATIO = 0.35
+PLATE_R_MAX_RATIO = 0.55
 
 
 def main():
@@ -44,12 +39,13 @@ def main():
 
     tiles = []
     for p1 in PARAM1_LIST:
-        # 【TODO 1】调一次 cv2.HoughCircles，把 param1 传成 p1，其它参数用上面的常量。
-        # 半径限制用 short * PLATE_R_MIN_RATIO / PLATE_R_MAX_RATIO。
-        # 注意 None 的情况（这一档可能一个圆都检不出来）。
-        found = None  # TODO 1
-        raise NotImplementedError("TODO 1: 循环里调用 HoughCircles")
-
+        found = cv2.HoughCircles(
+            blur, cv2.HOUGH_GRADIENT,
+            dp=1.0, minDist=short * 0.5,
+            param1=p1, param2=PLATE_PARAM2,
+            minRadius=int(short * PLATE_R_MIN_RATIO),
+            maxRadius=int(short * PLATE_R_MAX_RATIO),
+        )
         circles = [] if found is None else np.round(found[0]).astype(int)
 
         tile = img.copy()

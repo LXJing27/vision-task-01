@@ -1,24 +1,17 @@
 # -*- coding: utf-8 -*-
 """任务一（2）：除了霍夫圆检测，还有哪些办法能把圆找出来？
 
-====================================================================
-【这是骨架文件】方法 A 必须自己写（TODO 1），B、C 选做一个就够。
-方法 A 写通了，B 和 C 你自然就知道怎么改。
-====================================================================
+三条路子的思路：
 
-三条路子的思路（先想清楚原理再写代码）：
-
-A. 边缘 -> 轮廓 -> 最小外接圆 -> 圆度筛选
-   把边缘连成一条条闭合曲线（轮廓），给每条轮廓套一个最小的圆，
-   再用「圆度」判断它像不像圆。圆度 = 4π*面积 / 周长²，正圆是 1，
-   方形约 0.785，细长条趋近 0。
-   **先想一个问题**：一个圆，它的「外边」和「里边」是不是两条轮廓？
-   那会不会被数成两个圆？怎么去重？
+A. 边缘 -> 轮廓 -> 最小二乘拟合圆 -> 偏差筛选
+   把边缘连成一条条曲线（轮廓），对每条轮廓拟合一个圆，
+   再用「轮廓点到这个圆的相对偏差」判断它像不像圆。
+   一开始我用的是圆度（4πA/P²）筛选，结果一个都筛不出来——
+   因为真实照片里盘子的边是断断续续的，开口曲线算不出面积，圆度恒接近 0。
+   换成拟合圆 + 偏差判断才行。
 
 B. Otsu 二值化 -> 连通域 -> 外接矩形 -> 筛选
-   不找边，直接把「比背景暗的整块东西」抠出来。
-   Otsu 是自动找阈值的办法：遍历所有阈值，选让前景背景差别最大的那个。
-   想一想：白盘子和浅色桌面差得很少，这个方法能不能把盘子分出来？
+   不找边，直接把「比背景暗的整块东西」抠出来。盘子是白的，跳不出来。
 
 C. HOUGH_GRADIENT_ALT
    还是霍夫，但换了更严的判据：边缘的梯度方向要和半径方向一致。
@@ -49,42 +42,106 @@ def circularity(contour):
     return 4 * np.pi * area / (peri ** 2)
 
 
-def method_a_contour(img, min_circ=0.80):
-    """A：边缘 -> 轮廓 -> 最小外接圆 + 圆度筛选。
+def fit_circle(pts):
+    """最小二乘拟合圆，返回 (cx, cy, r, 相对偏差)。
 
-    【TODO 1】步骤提示：
-      1) 转灰度、高斯模糊（和任务一一样）
-      2) cv2.Canny 求边缘
-      3) 用 cv2.morphologyEx(..., cv2.MORPH_CLOSE, kernel) 把断开的边连起来
-         —— 不做这一步，轮廓不闭合，面积就不准
-      4) cv2.findContours 拿到所有轮廓（用 cv2.RETR_LIST，里外两条都要）
-      5) 对每条轮廓：circularity(c) 大于 min_circ 才留；
-         面积太小（比如 < 500）的直接丢
-      6) cv2.minEnclosingCircle 求出圆心和半径，画出来
-      7) 去重：圆心离得近、半径又差不多的是同一个圆，只留一个
-    返回：(画好的图, [(x, y, r), ...])
+    比 cv2.minEnclosingCircle 准：外接圆只要有一段弧最远就把半径撑大，
+    而拟合圆用上所有点，断开的弧也能拟合出正确的圆心和半径。
     """
-    raise NotImplementedError("TODO 1: 实现轮廓法")
+    x, y = pts[:, 0], pts[:, 1]
+    A = np.c_[x, y, np.ones(len(x))]
+    b = -(x * x + y * y)
+    (D, E, F), *_ = np.linalg.lstsq(A, b, rcond=None)
+    cx, cy = -D / 2, -E / 2
+    r = np.sqrt(cx * cx + cy * cy - F)
+    d = np.hypot(x - cx, y - cy)
+    return cx, cy, r, np.std(d) / max(r, 1.0)
 
 
-def method_b_connected(img):
-    """B：Otsu 二值化 -> 连通域 -> 外接矩形 -> 筛选。（选做）
+def method_a_contour(img, min_peri=600, max_err=0.10):
+    """A：边缘 -> 轮廓 -> 最小二乘拟合圆 + 偏差筛选。"""
+    gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
+    blur = cv2.GaussianBlur(gray, (9, 9), 2.0)
 
-    【TODO 2】提示：
-      cv2.threshold(blur, 0, 255, cv2.THRESH_BINARY_INV + cv2.THRESH_OTSU)
-      注意要用 INV，这样「暗的物体」才会变成白色前景。
-      然后 cv2.connectedComponentsWithStats 拿到每个连通域的中心、外接框、面积。
-    """
-    raise NotImplementedError("TODO 2（选做）: 实现连通域法")
+    # 阈值必须压得低：盘沿和桌面只差十来个灰阶，用 40/120 边会碎成小段
+    edges = cv2.Canny(blur, 20, 60)
+    kernel = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (9, 9))
+    edges = cv2.morphologyEx(edges, cv2.MORPH_CLOSE, kernel)   # 补断口
+
+    contours, _ = cv2.findContours(edges, cv2.RETR_LIST, cv2.CHAIN_APPROX_NONE)
+
+    cands = []
+    for c in contours:
+        # 开口曲线的面积算不出来，所以这里用周长当尺子，不能用 contourArea
+        if cv2.arcLength(c, True) < min_peri:
+            continue
+        pts = c.reshape(-1, 2).astype(float)
+        cx, cy, r, err = fit_circle(pts)
+        if r < 30 or err > max_err:
+            continue
+        cands.append((err, int(cx), int(cy), int(r)))
+
+    # 去重：同一个圆的里外两条边会各拟合出一个，偏差小的留
+    cands.sort()
+    kept = []
+    for err, x, y, r in cands:
+        if any(np.hypot(x - kx, y - ky) < 0.20 * r and abs(r - kr) < 0.30 * r
+               for kx, ky, kr in kept):
+            continue
+        kept.append((x, y, r))
+
+    out = img.copy()
+    for x, y, r in kept:
+        cv2.circle(out, (x, y), r, (0, 140, 255), 2, cv2.LINE_AA)
+        cv2.circle(out, (x, y), 3, (0, 140, 255), -1, cv2.LINE_AA)
+    return out, kept
 
 
-def method_c_alt(img):
-    """C：HOUGH_GRADIENT_ALT。（选做）
+def method_b_connected(img, min_area=20000):
+    """B：Otsu 二值化 -> 连通域 -> 外接矩形 -> 筛选。"""
+    gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
+    blur = cv2.GaussianBlur(gray, (9, 9), 2.0)
 
-    【TODO 3】提示：还是 cv2.HoughCircles，但第二个参数换成 cv2.HOUGH_GRADIENT_ALT，
-    dp 给 1.5 左右，param1 给 300 左右，param2 这次是 0~1 的小数（0.8~0.9）。
-    """
-    raise NotImplementedError("TODO 3（选做）: 实现 ALT 版本")
+    # INV：让「比背景暗的物体」变成白色前景
+    t, binary = cv2.threshold(blur, 0, 255,
+                              cv2.THRESH_BINARY_INV + cv2.THRESH_OTSU)
+    print(f"    Otsu 选出的阈值 = {t:.0f}")
+
+    kernel = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (7, 7))
+    binary = cv2.morphologyEx(binary, cv2.MORPH_OPEN, kernel)
+
+    num, labels, stats, cents = cv2.connectedComponentsWithStats(binary)
+    out = img.copy()
+    found = []
+    for i in range(1, num):
+        x, y, w, h, area = stats[i]
+        if area < min_area:
+            continue
+        if not (0.7 <= w / float(h) <= 1.3):      # 只留接近方形的
+            continue
+        found.append((int(cents[i][0]), int(cents[i][1]), int(max(w, h) / 2)))
+        cv2.rectangle(out, (x, y), (x + w, y + h), (0, 255, 0), 2)
+    return out, found
+
+
+def method_c_alt(img, param1=50, param2=0.3):
+    """C：HOUGH_GRADIENT_ALT（判据更严，param2 是 0~1 的小数）。"""
+    short = min(img.shape[:2])
+    blur = cv2.GaussianBlur(cv2.cvtColor(img, cv2.COLOR_BGR2GRAY), (9, 9), 2.0)
+
+    found = cv2.HoughCircles(
+        blur, cv2.HOUGH_GRADIENT_ALT,
+        dp=1.5, minDist=short * 0.08,
+        param1=param1, param2=param2,
+        minRadius=int(short * 0.05), maxRadius=int(short * 0.60),
+    )
+    circles = [] if found is None else np.round(found[0]).astype(int).tolist()
+
+    out = img.copy()
+    for x, y, r in circles:
+        cv2.circle(out, (x, y), r, (0, 255, 255), 2, cv2.LINE_AA)
+        cv2.circle(out, (x, y), 3, (0, 255, 255), -1, cv2.LINE_AA)
+    return out, circles
 
 
 def main():
@@ -99,13 +156,17 @@ def main():
     res_a, circles_a = method_a_contour(img)
     print(f"[A 轮廓法] 得到 {len(circles_a)} 个圆：{circles_a}")
 
-    # B、C 做完后把下面两行取消注释，并加进对比图
-    # res_b, circles_b = method_b_connected(img)
-    # res_c, circles_c = method_c_alt(img)
+    res_b, circles_b = method_b_connected(img)
+    print(f"[B 连通域] 得到 {len(circles_b)} 块区域：{circles_b}")
+
+    res_c, circles_c = method_c_alt(img)
+    print(f"[C ALT   ] 得到 {len(circles_c)} 个圆：{circles_c}")
 
     compare = hstack_same_height([
         with_title(img, "Original"),
-        with_title(res_a, "A: Contour + minEnclosingCircle"),
+        with_title(res_a, "A: Contour + circle fit"),
+        with_title(res_b, "B: Otsu + connectedComponents"),
+        with_title(res_c, "C: HOUGH_GRADIENT_ALT"),
     ])
     imwrite_unicode("results/task1_methods_compare.png", compare)
 
