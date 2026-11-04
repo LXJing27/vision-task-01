@@ -14,6 +14,11 @@
 输出：results/task1_param_sweep.png（3x3 九宫格）
 """
 
+import os
+import sys
+
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+
 import argparse
 
 import cv2

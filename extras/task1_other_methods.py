@@ -26,6 +26,11 @@ C. HOUGH_GRADIENT_ALT
 运行：python task1_other_methods.py
 """
 
+import os
+import sys
+
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+
 import argparse
 
 import cv2
