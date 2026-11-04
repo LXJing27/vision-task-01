@@ -14,7 +14,7 @@ from utils import (gray_to_bgr, hstack_same_height, imread_unicode,
 # 注意 S 不能卡太高：真实照片里 Indoor 那半边偏暗，蓝色块的 S 只有 150 左右。
 BLUE_LOWER = np.array([100, 120, 70])
 BLUE_UPPER = np.array([130, 255, 255])
-YELLOW_LOWER = np.array([20, 120, 120])
+YELLOW_LOWER = np.array([20, 120, 90])
 YELLOW_UPPER = np.array([35, 255, 255])
 
 MIN_AREA = 300      # 小于这个面积的色块当噪声丢掉
