@@ -61,7 +61,7 @@ def main():
 
     # 盘子和饼干半径差 4 倍、边缘对比度也差一档，只能分两遍各配参数
     plates = hough_circles(
-        blur, dp=1.0, min_dist=short * 0.50, param1=PLATE_CANNY_HIGH,
+        blur, dp=1.0, min_dist=short * 0.5, param1=PLATE_CANNY_HIGH,
         param2=PLATE_PARAM2,
         r_min=short * PLATE_R_MIN_RATIO, r_max=short * PLATE_R_MAX_RATIO,
     )
