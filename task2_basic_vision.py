@@ -10,11 +10,11 @@ from utils import (gray_to_bgr, hstack_same_height, imread_unicode,
                    imwrite_unicode, show, wait_and_close, with_title)
 
 # HSV 阈值：(H下限, S下限, V下限), (H上限, S上限, V上限)
-# 关键是 S 下限——目标色的 S 在 210~220，干扰色低于它
-# （深蓝 S=202、橄榄 S=187，卡到 200 以上就干净了）
-BLUE_LOWER = np.array([100, 205, 70])
+# H 管"是不是这个颜色"，S/V 下限只负责排除"发白/发灰"和"发黑"的像素。
+# 注意 S 不能卡太高：真实照片里 Indoor 那半边偏暗，蓝色块的 S 只有 150 左右。
+BLUE_LOWER = np.array([100, 120, 70])
 BLUE_UPPER = np.array([130, 255, 255])
-YELLOW_LOWER = np.array([20, 200, 120])
+YELLOW_LOWER = np.array([20, 120, 120])
 YELLOW_UPPER = np.array([35, 255, 255])
 
 MIN_AREA = 300      # 小于这个面积的色块当噪声丢掉
@@ -51,7 +51,7 @@ def extract_color(img_bgr, hsv, lower, upper, name, color):
 
 def main():
     parser = argparse.ArgumentParser()
-    parser.add_argument("--image", default="images/chart.png")
+    parser.add_argument("--image", default="images/chart_real.png")
     parser.add_argument("--no-show", action="store_true")
     args = parser.parse_args()
     show_window = not args.no_show

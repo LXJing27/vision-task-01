@@ -3,73 +3,81 @@
 两个 OpenCV 练习：霍夫圆检测（找盘子和饼干）、传统视觉基础（读图/灰度 + HSV 取色）。
 Python 3.13 + OpenCV 4.11 + VS Code。
 
-## 状态
+## 结果
 
-两个任务都还是骨架，算法部分自己写。需要填的地方一共 10 处：
+**任务一** · `images/plate_real.png`（1333×886）
 
-| 文件 | TODO | 要写的东西 |
+```
+盘子 1 个：圆心 (622, 436)，半径 379
+饼干 3 个：半径 148 / 155 / 148
+```
+
+**任务二** · `images/chart_real.png`（836×431）
+
+```
+蓝色 4 块（Outdoor 顶行+中行、Indoor 顶行+中行）
+黄色 2 块（Outdoor 底行、Indoor 底行）
+```
+
+## 怎么跑
+
+```bash
+python task1_hough_circle.py          # 任务一，弹窗显示
+python task2_basic_vision.py          # 任务二，弹三个窗口
+python task1_hough_circle.py --no-show   # 不弹窗，只输出结果图
+```
+
+换图片：`--image images/xxx.png`，或在文件里改 `--image` 的默认值。
+结果图都写在 `results/`。
+
+## 参数是怎么定的
+
+真实照片对比度弱，**不能用教科书上的默认值**。下面每个数都是实测扫出来的：
+
+| 参数 | 值 | 为什么 |
 |---|---|---|
-| `task1_hough_circle.py` | 1 | 封装 `cv2.HoughCircles`（处理 None 和多余维度） |
-| | 2 | 画圆 + 圆心 + 英文标签 |
-| | 3 | 第一遍检测：盘子 |
-| | 4 | 第二遍检测：饼干 |
-| | 5 | 画图、存结果、拼三步对照图 |
-| `task2_basic_vision.py` | 1 | 转灰度 |
-| | 2 | 原图和灰度并排显示 |
-| | 3 | 转 HSV |
-| | 4 | `inRange` 得掩膜 + 形态学清理 |
-| | 5 | 找轮廓、算外接矩形、画框写字 |
+| 盘子 `param1` | 60 | 白盘压浅背景，边缘弱，太高就描不出边 |
+| 盘子 `param2` | 30 | 门槛给 50 就一个圆都检不到 |
+| 饼干 `param1` | 50 | 金黄饼干压在米白盘上，灰度只差 11，必须低 |
+| 饼干 `param2` | 25 | 小圆票少 |
+| 盘子半径 | 0.35~0.55×短边 | 实测半径 379，短边 886，比值 0.43 |
+| 饼干半径 | 0.09~0.20×短边 | 实测半径 148~155，比值 0.17 |
+| 蓝色 `S` 下限 | 120 | Indoor 那半边偏暗，蓝块 S 只有 150，卡到 200 以上会漏 |
+| 黄色 `S` 下限 | 120 | 黄块的 S 都 240 以上，给低点没有副作用 |
 
-每处上方都有要点提示，每处做完先把那行 `raise NotImplementedError(...)` 删掉再跑。
+**注意**：`images/plate.png`、`images/chart.png` 是合成图，参数和上面这套不通用——
+合成图的饼干是深褐色（对比强，`param1` 要 120），真实图是金黄色（对比弱，只能给 50）。
+这正好说明参数得跟着图调，不能一套打天下。
 
 ## 目录
 
 ```
 vision-task-01/
-├── task1_hough_circle.py     任务一（1），骨架
-├── task2_basic_vision.py     任务二，骨架
-├── probe_hsv.py              小工具：量某块区域的 HSV，帮你定阈值
-├── utils.py                  读图/显示/拼图的小函数，直接用
-├── make_demo_images.py       生成替代测试图（有原图后用不上）
-├── images/                   测试图
-├── results/                  程序输出的图
-├── extras/                   选做：参数扫描、三种方法对比（写文档时才用）
-├── docs/学习过程.md           提交用的文档，待按你的实现核对
-└── _reference/               完整答案，被 .gitignore 排除，卡住了再看
+├── task1_hough_circle.py     任务一：分尺度两遍霍夫圆
+├── task2_basic_vision.py     任务二：灰度 + HSV 取色画框
+├── probe_hsv.py              小工具：量某块区域的 HSV 分布，定阈值用
+├── pick_rect.py              小工具：鼠标拖框，打印 x y w h
+├── utils.py                  读图/显示/拼图的小函数
+├── make_demo_images.py       生成合成测试图（已有真图后可不用）
+├── images/                   真实图（plate_real / chart_real）+ 合成图
+├── results/                  程序输出
+├── extras/                   参数扫描、三种替代方法（写文档时用）
+├── docs/学习过程.md           提交用的文档
+└── _reference/               参考实现，被 .gitignore 排除
 ```
 
 ## 环境
 
-已经装好了。要重建：
-
 ```bash
 python -m venv .venv
-source .venv/Scripts/activate
-pip install -r requirements.txt
+.venv/Scripts/python.exe -m pip install -r requirements.txt
 ```
 
-VS Code 打开这个文件夹，右下角应显示 `.venv (Python 3.13.14)`。
-不是就 `Ctrl+Shift+P` → `Python: Select Interpreter` → 选 `./.venv/Scripts/python.exe`。
+VS Code 打开这个文件夹，右下角显示 `.venv (Python 3.13.14)` 即可。
 
-## 怎么跑
+## 三个已经绕过的坑
 
-```bash
-python task1_hough_circle.py    # 任务一
-python task2_basic_vision.py    # 任务二
-python probe_hsv.py --image images/chart.png    # 量 HSV
-```
-
-加 `--no-show` 不弹窗只出图。窗口跑完按任意键结束。
-
-## 卡住时的顺序
-
-1. 看那个函数上面的提示，再看文件末尾的「分级提示」
-2. 一次只改一个参数，跑一次看结果怎么变
-3. 卡够 20 分钟再看 `_reference/`，而且只看一个函数，看完合上自己重写
-
-## 两个已经绕过的坑
-
-1. **中文路径**：`cv2.imread` 遇中文路径不报错、返回 `None`，
-   之后报 `'NoneType' object has no attribute 'shape'`，完全指不到原因。
-   用 `utils.py` 里的 `imread_unicode` 读图。
-2. **`cv2.putText` 写不了中文**，标签统一用英文（Plate / Cookie / Blue / Yellow）。
+1. **中文路径**：`cv2.imread` 遇中文名不报错、返回 `None`，然后报
+   `'NoneType' object has no attribute 'shape'`，完全指不到原因。用 `imread_unicode`。
+2. **`cv2.putText` 写不了中文**，标签统一英文。
+3. **`HoughCircles` 检不到时返回 `None`**，直接 `found[0]` 会 `TypeError`，要先判断。

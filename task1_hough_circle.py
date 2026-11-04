@@ -11,14 +11,14 @@ from utils import (gray_to_bgr, hstack_same_height, imread_unicode,
 
 BLUR_KSIZE = (9, 9)
 BLUR_SIGMA = 2.0
-CANNY_HIGH = 120           # 饼干边缘阈值（深褐压白盘，对比强）
-PLATE_CANNY_HIGH = 70      # 盘子边缘阈值（白盘压浅桌面，对比弱，必须给低）
-PLATE_R_MIN_RATIO = 0.30   # 半径按图片短边的比例算，换分辨率不用改
-PLATE_R_MAX_RATIO = 0.50
-PLATE_PARAM2 = 60
-COOKIE_R_MIN_RATIO = 0.08
-COOKIE_R_MAX_RATIO = 0.17
-COOKIE_PARAM2 = 32
+CANNY_HIGH = 50            # 饼干的边缘阈值（金黄色饼干压在米白盘上，对比很弱）
+PLATE_CANNY_HIGH = 60      # 盘子的边缘阈值（靠盘沿那圈花纹，也偏弱）
+PLATE_R_MIN_RATIO = 0.35   # 半径按图片短边的比例算，换分辨率不用改
+PLATE_R_MAX_RATIO = 0.55
+PLATE_PARAM2 = 30          # 投票门槛：真实照片的边不完整，给高了会漏
+COOKIE_R_MIN_RATIO = 0.09
+COOKIE_R_MAX_RATIO = 0.20
+COOKIE_PARAM2 = 25
 
 
 def hough_circles(gray, dp, min_dist, param1, param2, r_min, r_max):
@@ -47,7 +47,7 @@ def draw_circles(img, circles, color, label, thickness=2):
 
 def main():
     parser = argparse.ArgumentParser()
-    parser.add_argument("--image", default="images/plate.png")
+    parser.add_argument("--image", default="images/plate_real.png")
     parser.add_argument("--no-show", action="store_true")
     args = parser.parse_args()
 
@@ -66,7 +66,7 @@ def main():
         r_min=short * PLATE_R_MIN_RATIO, r_max=short * PLATE_R_MAX_RATIO,
     )
     cookies = hough_circles(
-        blur, dp=1.0, min_dist=short * 0.14, param1=CANNY_HIGH,
+        blur, dp=1.0, min_dist=short * 0.16, param1=CANNY_HIGH,
         param2=COOKIE_PARAM2,
         r_min=short * COOKIE_R_MIN_RATIO, r_max=short * COOKIE_R_MAX_RATIO,
     )
