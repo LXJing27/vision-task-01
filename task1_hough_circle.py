@@ -1,5 +1,4 @@
- # -*- coding: utf-8 -*-
-"""任务一：霍夫圆检测，找出盘子和饼干并标注。"""
+# -*- coding: utf-8 -*-
 
 import argparse
 
@@ -11,32 +10,30 @@ from utils import (gray_to_bgr, hstack_same_height, imread_unicode,
 
 BLUR_KSIZE = (9, 9)
 BLUR_SIGMA = 2.0
-CANNY_HIGH = 50            # 饼干的边缘阈值（金黄色饼干压在米白盘上，对比很弱）
-PLATE_CANNY_HIGH = 60      # 盘子的边缘阈值（盘沿与桌面只差十来个灰阶，很弱）
-PLATE_R_MIN_RATIO = 0.35  # 半径按图片短边的比例算，换分辨率不用改
+CANNY_HIGH = 50
+PLATE_CANNY_HIGH = 60
+PLATE_R_MIN_RATIO = 0.35
 PLATE_R_MAX_RATIO = 0.55
-PLATE_PARAM2 = 20          # 投票门槛：盘子外沿比内圈更弱，门槛给到 30 只能找到内圈
+PLATE_PARAM2 = 20
 COOKIE_R_MIN_RATIO = 0.09
 COOKIE_R_MAX_RATIO = 0.20
 COOKIE_PARAM2 = 25
 
 
 def hough_circles(gray, dp, min_dist, param1, param2, r_min, r_max):
-    """封装 cv2.HoughCircles，统一返回 [[x, y, r], ...] 的 int 数组。"""
     found = cv2.HoughCircles(
         gray, cv2.HOUGH_GRADIENT,
         dp=dp, minDist=min_dist,
         param1=param1, param2=param2,
         minRadius=int(r_min), maxRadius=int(r_max),
     )
-    # 检不到圆时返回 None，直接下标会 TypeError，所以先判断
+    # 一个都没检到时返回的是 None，不是空数组，直接取下标会 TypeError
     if found is None:
         return np.empty((0, 3), dtype=int)
     return np.round(found[0]).astype(int)
 
 
 def draw_circles(img, circles, color, label, thickness=2):
-    """画圆 + 圆心 + 标签，就地修改 img。"""
     for x, y, r in circles:
         x, y, r = int(x), int(y), int(r)
         cv2.circle(img, (x, y), r, color, thickness, cv2.LINE_AA)
@@ -59,7 +56,7 @@ def main():
     gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
     blur = cv2.GaussianBlur(gray, BLUR_KSIZE, BLUR_SIGMA)
 
-    # 盘子和饼干半径差 4 倍、边缘对比度也差一档，只能分两遍各配参数
+    # 盘子和饼干的尺寸差 4 倍、边缘强弱也不同，一组参数只能折中，所以分两遍
     plates = hough_circles(
         blur, dp=1.0, min_dist=short * 0.5, param1=PLATE_CANNY_HIGH,
         param2=PLATE_PARAM2,
@@ -75,11 +72,10 @@ def main():
     print(f"检测到饼干 {len(cookies)} 个：{cookies.tolist()}")
 
     result = img.copy()
-    draw_circles(result, plates, (255, 0, 0), "Plate")     # BGR：蓝
-    draw_circles(result, cookies, (0, 255, 0), "Cookie")   # BGR：绿
+    draw_circles(result, plates, (255, 0, 0), "Plate")
+    draw_circles(result, cookies, (0, 255, 0), "Cookie")
     imwrite_unicode("results/task1_result.png", result)
 
-    # 三步对照图：灰度 → Canny 边缘 → 检测结果
     edges = cv2.Canny(blur, CANNY_HIGH // 2, CANNY_HIGH)
     steps = hstack_same_height([
         with_title(gray_to_bgr(gray), "1. Gray"),

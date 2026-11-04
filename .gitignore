@@ -4,3 +4,5 @@ __pycache__/
 .vscode/
 .DS_Store
 _reference/
+docs/_preview.html
+extras/md2pdf.py
