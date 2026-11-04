@@ -60,7 +60,7 @@ vision-task-01/
 ├── images/                   作业原图（plate_real / chart_real）
 ├── results/                  程序输出
 ├── extras/                   参数扫描、三种替代方法（写文档时用）
-├── docs/学习过程.md           提交用的文档
+├── docs/learning-notes.md           提交用的文档
 └── _reference/               参考实现，被 .gitignore 排除
 ```
 
