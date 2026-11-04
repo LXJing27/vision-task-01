@@ -43,9 +43,13 @@ def show(title, img, enabled=True):
     """弹出一个窗口显示图片。
 
     enabled=False 时只跳过显示，不影响存图（在没有图形界面的环境里跑代码时用）。
+    窗口用 WINDOW_NORMAL 并强制置顶，否则它会被 VS Code 挡在后面，
+    看起来像「什么都没发生」，其实程序正卡在 waitKey 上等按键。
     """
     if not enabled:
         return
+    cv2.namedWindow(title, cv2.WINDOW_NORMAL)
+    cv2.setWindowProperty(title, cv2.WND_PROP_TOPMOST, 1)
     cv2.imshow(title, img)
 
 

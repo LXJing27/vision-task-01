@@ -12,10 +12,10 @@ from utils import (gray_to_bgr, hstack_same_height, imread_unicode,
 BLUR_KSIZE = (9, 9)
 BLUR_SIGMA = 2.0
 CANNY_HIGH = 50            # 饼干的边缘阈值（金黄色饼干压在米白盘上，对比很弱）
-PLATE_CANNY_HIGH = 60      # 盘子的边缘阈值（靠盘沿那圈花纹，也偏弱）
-PLATE_R_MIN_RATIO = 0.35   # 半径按图片短边的比例算，换分辨率不用改
+PLATE_CANNY_HIGH = 60      # 盘子的边缘阈值（盘沿与桌面只差十来个灰阶，很弱）
+PLATE_R_MIN_RATIO = 0.35  # 半径按图片短边的比例算，换分辨率不用改
 PLATE_R_MAX_RATIO = 0.55
-PLATE_PARAM2 = 30          # 投票门槛：真实照片的边不完整，给高了会漏
+PLATE_PARAM2 = 20          # 投票门槛：盘子外沿比内圈更弱，门槛给到 30 只能找到内圈
 COOKIE_R_MIN_RATIO = 0.09
 COOKIE_R_MAX_RATIO = 0.20
 COOKIE_PARAM2 = 25

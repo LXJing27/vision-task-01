@@ -22,7 +22,7 @@ import numpy as np
 from utils import imread_unicode, imwrite_unicode, with_title
 
 PARAM1_LIST = [20, 30, 40, 50, 60, 70, 85, 100, 130]
-PLATE_PARAM2 = 30
+PLATE_PARAM2 = 20
 PLATE_R_MIN_RATIO = 0.35
 PLATE_R_MAX_RATIO = 0.55
 
